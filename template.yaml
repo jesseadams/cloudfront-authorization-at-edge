@@ -75,7 +75,7 @@ Parameters:
     Description: The HTTP headers to set on all responses from CloudFront. To be provided as a JSON object
     Default: >-
       {
-        "Content-Security-Policy": "default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com",
+        "Content-Security-Policy": "default-src *; script-src https: 'unsafe-inline'; style-src https: 'unsafe-inline'; object-src 'none'; connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com",
         "Strict-Transport-Security": "max-age=31536000; includeSubdomains; preload",
         "Referrer-Policy": "same-origin",
         "X-XSS-Protection": "1; mode=block",
@@ -100,6 +100,24 @@ Globals:
     Timeout: 60
 
 Resources:
+  VerifyEmailLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/cognito/verify-acuity-email/
+      Handler: bundle.handler
+      Runtime: nodejs10.x
+      Role: !GetAtt LambdaEdgeExecutionRole.Arn
+      Timeout: 3
+      FunctionName: !Sub "${AWS::StackName}-verifyAcuityEmail"
+
+  UserPoolLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      Principal: cognito-idp.amazonaws.com
+      FunctionName: !Sub "${AWS::StackName}-verifyAcuityEmail"
+      SourceArn: !GetAtt UserPool.Arn
+
   S3Bucket:
     Type: AWS::S3::Bucket
     Condition: CreateCloudFrontDistribution
@@ -141,7 +159,7 @@ Resources:
       Runtime: nodejs10.x
       Role: !GetAtt LambdaEdgeExecutionRole.Arn
       Timeout: 5
-  
+
   SignOutHandler:
     Type: AWS::Serverless::Function
     Properties:
@@ -260,6 +278,12 @@ Resources:
       UserPoolName: !Sub "${AWS::Region}-${AWS::StackName}-${AWS::AccountId}"
       UsernameAttributes:
         - email
+      AutoVerifiedAttributes:
+        - email
+      LambdaConfig:
+        PreSignUp: !GetAtt VerifyEmailLambda.Arn
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
 
   User:
     Type: AWS::Cognito::UserPoolUser
