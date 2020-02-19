@@ -87,7 +87,7 @@ This solution also contains an Amazon Cognito User Pool and S3 bucket, that shou
 If your users aren't near us-east-1 (North Virgina) and low latency is important enough to you, you can split [this solution's SAM template](./template.yaml) into two separate templates:
 
 - a template with CloudFront and Lambda@Edge resources, that you deploy to us-east-1
-- a template with the Amazon Cognito User Pool and S3 bucket, that you deploy to a region closer to your users 
+- a template with the Amazon Cognito User Pool and S3 bucket, that you deploy to a region closer to your users
 
 NOTE: Even if your users aren't near us-east-1, latency might not bother them too much: latency will only be perceived by users when they open the Cognito Hosted UI to sign in, and when Lambda@Edge fetches the JWKS from the Cognito User Pool to validate JWTs. The JWKS is cached by the Lambda@Edge function, so as long as the Lambda@Edge function stays warm the JWKS won't need to be fetched again.
 
@@ -104,3 +104,18 @@ For the sources that are webpacked this doesn't matter.
 ## License Summary
 
 This sample code is made available under a modified MIT license. See the [LICENSE](./LICENSE) file.
+
+## Acuity Specific Deployment Steps
+
+These are example commands. Ids and other various parameters will need adjusted.
+
+```
+npm install
+npm run build
+sam build --use-container
+sam package --output-template-file packaged.yaml --s3-bucket acuity-labs-cloudfront-sam-deploy --region us-east-1
+sam deploy --template-file packaged.yaml --stack-name acuity-labs-cloudfront-authorization-at-edge --capabilities CAPABILITY_IAM --parameter-overrides AlternateDomainNames=acuitylabs.us,www.acuitylabs.us CreateCloudFrontDistribution=false Version=4 --region us-east-1
+aws cognito-idp set-ui-customization --user-pool-id  us-east-1_aajwc3YrY --image-file fileb://acuity.png
+```
+
+After deployed, a manual CNAME record needs created in Route53 that points `auth.acuitylabs.us` to the Cognito User Pool Domain endpoint. As of this writing, CloudFormation did not have native support for automating this step.

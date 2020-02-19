@@ -20,6 +20,8 @@ export const handler: CloudFrontRequestHandler = async (event) => {
     const domainName = request.headers['host'][0].value;
     const requestedUri = `${request.uri}${request.querystring ? '?' + request.querystring : ''}`;
     const nonce = generateNonce();
+
+    console.log(request);
     try {
         const { tokenUserName, idToken, refreshToken } = extractAndParseCookies(request.headers, clientId);
         if (!tokenUserName || !idToken) {
@@ -46,6 +48,23 @@ export const handler: CloudFrontRequestHandler = async (event) => {
         // Check for valid a JWT. This throws an error if there's no valid JWT:
         await validate(idToken, tokenJwksUri, tokenIssuer, clientId);
         // Return the request unaltered to allow access to the resource:
+
+        // Append document root index.html if necessary
+        if(request.uri != "/") {
+            let paths = request.uri.split('/');
+            let lastPath = paths[paths.length - 1];
+            let isFile = lastPath.split('.').length > 1;
+
+            if(!isFile) {
+                if(lastPath != "") {
+                    request.uri += "/";
+                }
+
+                request.uri += 'index.html';
+            }
+
+            console.log(request.uri);
+        }
         return request;
 
     } catch (err) {

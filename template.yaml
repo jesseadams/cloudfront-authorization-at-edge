@@ -90,6 +90,10 @@ Parameters:
     Type: String
     Description: "Use for development: putting in a new version forces redeployment of Lambda@Edge functions"
     Default: ""
+  SslCertificateArn:
+    Type: String
+    Description: The ARN of the ACM certificate to use for the Domain
+    Default: arn:aws:acm:us-east-1:140980722019:certificate/48be6ddd-d3a3-42f5-919a-327e7db01bd4
 
 Conditions:
   CreateUser: !Not [!Equals [!Ref EmailAddress, ""]]
@@ -297,11 +301,13 @@ Resources:
     Properties:
       UserPoolId: !Ref UserPool
 
-  UserPoolDomain:
-    Type: Custom::UserPoolDomain
+  UserPoolDomainNew:
+    Type: AWS::Cognito::UserPoolDomain
     Properties:
-      ServiceToken: !GetAtt UserPoolDomainHandler.Arn
       UserPoolId: !Ref UserPool
+      Domain: auth.acuitylabs.us
+      CustomDomainConfig:
+        CertificateArn: !Ref SslCertificateArn
 
   UserPoolDomainHandler:
     Type: AWS::Serverless::Function
@@ -356,7 +362,7 @@ Resources:
       BucketName: !Ref S3Bucket
       UserPoolId: !Ref UserPool
       ClientId: !Ref UserPoolClient
-      CognitoAuthDomain: !GetAtt UserPoolDomain.DomainName
+      CognitoAuthDomain: "auth.acuitylabs.us"
       RedirectPathSignIn: !Ref RedirectPathSignIn
       RedirectPathSignOut: !Ref RedirectPathSignOut
       OAuthScopes: !Ref OAuthScopes
@@ -398,7 +404,7 @@ Resources:
           "userPoolId": "${UserPool}",
           "clientId": "${UserPoolClient}",
           "oauthScopes": ${OAuthScopes},
-          "cognitoAuthDomain": "${UserPoolDomain.DomainName}",
+          "cognitoAuthDomain": "auth.acuitylabs.us",
           "redirectPathSignIn": "${RedirectPathSignIn}",
           "redirectPathSignOut": "${RedirectPathSignOut}",
           "redirectPathAuthRefresh": "${RedirectPathAuthRefresh}",
@@ -417,7 +423,7 @@ Resources:
           "userPoolId": "${UserPool}",
           "clientId": "${UserPoolClient}",
           "oauthScopes": ${OAuthScopes},
-          "cognitoAuthDomain": "${UserPoolDomain.DomainName}",
+          "cognitoAuthDomain": "auth.acuitylabs.us",
           "redirectPathSignIn": "${RedirectPathSignIn}",
           "redirectPathSignOut": "${RedirectPathSignOut}",
           "redirectPathAuthRefresh": "${RedirectPathAuthRefresh}",
@@ -444,7 +450,7 @@ Resources:
           "userPoolId": "${UserPool}",
           "clientId": "${UserPoolClient}",
           "oauthScopes": ${OAuthScopes},
-          "cognitoAuthDomain": "${UserPoolDomain.DomainName}",
+          "cognitoAuthDomain": "auth.acuitylabs.us",
           "redirectPathSignIn": "${RedirectPathSignIn}",
           "redirectPathSignOut": "${RedirectPathSignOut}",
           "redirectPathAuthRefresh": "${RedirectPathAuthRefresh}",
@@ -463,7 +469,7 @@ Resources:
           "userPoolId": "${UserPool}",
           "clientId": "${UserPoolClient}",
           "oauthScopes": ${OAuthScopes},
-          "cognitoAuthDomain": "${UserPoolDomain.DomainName}",
+          "cognitoAuthDomain": "auth.acuitylabs.us",
           "redirectPathSignIn": "${RedirectPathSignIn}",
           "redirectPathSignOut": "${RedirectPathSignOut}",
           "redirectPathAuthRefresh": "${RedirectPathAuthRefresh}",
@@ -512,7 +518,7 @@ Outputs:
     Value: !Ref UserPoolClient
   CognitoAuthDomain:
     Description: The domain where the Cognito Hosted UI is served
-    Value: !GetAtt UserPoolDomain.DomainName
+    Value: auth.acuitylabs.us
   RedirectUrisSignIn:
     Description: The URI(s) that will handle the redirect from Cognito after successfull sign-in
     Value: !GetAtt UserPoolClientUpdate.RedirectUrisSignIn
