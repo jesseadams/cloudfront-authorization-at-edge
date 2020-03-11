@@ -92,7 +92,7 @@ Parameters:
   SslCertificateArn:
     Type: String
     Description: The ARN of the ACM certificate to use for the Domain
-    Default: arn:aws:acm:us-east-1:879560829603:certificate/ad6f5cf8-f104-4afd-a7c3-d53e9381ffa4
+    Default: arn:aws:acm:us-east-1:140980722019:certificate/48be6ddd-d3a3-42f5-919a-327e7db01bd4
   SubdomainName:
     Type: String
     Description: Name of the subdomain to create in Route 53
@@ -100,11 +100,11 @@ Parameters:
   DomainName:
     Type: String
     Description: Name of the domain to use in Route 53
-    Default: acuityops.us
+    Default: acuitylabs.us
   HostedZoneId:
     Type: String
     Description: The Hosted Zone ID
-    Default: Z29GK6VM16R5JF
+    Default: Z22188QH6G99Q0
 
 Conditions:
   CreateUser: !Not [!Equals [!Ref EmailAddress, ""]]
@@ -493,6 +493,8 @@ Outputs:
     Description: The S3 Bucket where the SPA (React, Angular, Vue, ...) is uploaded to
     Condition: CreateCloudFrontDistribution
     Value: !Ref S3Bucket
+    Export:
+      Name: AcuityLabs-CloudFrontBucket
   WebsiteUrl:
     Description: URL of the CloudFront distribution that serves your SPA from S3
     Condition: CreateCloudFrontDistribution
